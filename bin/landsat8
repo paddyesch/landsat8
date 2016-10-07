@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+
+# MIT License
+#
+# Copyright (c) 2016 Patrick Eschenbach
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+import optparse
+from landsat8 import core
+
+def execute(options):
+    scene_id = options.scene
+    if not scene_id: scene_id = core.find_latest_scene_id()
+    if not scene_id: raise Exception("Could not find any scene ...")
+    downloaded = core.download_scene(scene_id)
+    if not downloaded: raise Exception("Could not download scene " + scene_id + " ...")
+    core.convert_scene(scene_id, options.quality, options.resize)
+    if options.cleanup: core.clean_up_scene(scene_id)
+    core.print_scene_result(scene_id)
+
+def main():
+    usage = "usage: %prog [options] arg1 arg2 arg3"
+    parser = optparse.OptionParser(usage=usage, version="%prog 0.1")
+    parser.add_option('--cleanup', '-c', action="store_true", default=False, help="clean up all files created during the process [default: keep all files]")
+    parser.add_option('--scene', '-s', type="string", default="", help="choose the scene by its landsat scene id [default: find the latest scene automatically]")
+    parser.add_option('--quality', '-q', type="int", default="80", help="set the image output quality in percent [default: use 80% quality]")
+    parser.add_option('--resize', '-r', type="int", default="50", help="set the image output size in percent of the original [default: use 50% original size]")
+    options, arguments = parser.parse_args()
+    execute(options)
+
+if __name__ == '__main__':
+    main()

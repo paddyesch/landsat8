@@ -1,0 +1,7 @@
+build/
+dist/
+temp/
+*.egg-info/
+*.tif
+*.jpg
+*.JPG
