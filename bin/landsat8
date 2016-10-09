@@ -32,6 +32,7 @@ def execute(options):
     downloaded = core.download_scene(scene_id)
     if not downloaded: raise Exception("Could not download scene " + scene_id + " ...")
     core.convert_scene(scene_id, options.quality, options.resize)
+    core.collect_metadata(scene_id)
     if options.cleanup: core.clean_up_scene(scene_id)
     core.print_scene_result(scene_id)
 

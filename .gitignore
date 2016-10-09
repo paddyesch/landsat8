@@ -5,3 +5,4 @@ temp/
 *.tif
 *.jpg
 *.JPG
+*_metadata.json
