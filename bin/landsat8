@@ -27,7 +27,7 @@ from landsat8 import core
 
 def execute(options):
     scene_id = options.scene
-    if not scene_id: scene_id = core.find_latest_scene_id()
+    if not scene_id: scene_id = core.find_scene()
     if not scene_id: raise Exception("Could not find any scene ...")
     downloaded = core.download_scene(scene_id)
     if not downloaded: raise Exception("Could not download scene " + scene_id + " ...")
@@ -38,7 +38,7 @@ def execute(options):
 
 def main():
     usage = "usage: %prog [options] arg1 arg2 arg3"
-    parser = optparse.OptionParser(usage=usage, version="%prog 0.1")
+    parser = optparse.OptionParser(usage=usage, version="%prog 0.2")
     parser.add_option('--cleanup', '-c', action="store_true", default=False, help="clean up all files created during the process [default: keep all files]")
     parser.add_option('--scene', '-s', type="string", default="", help="choose the scene by its landsat scene id [default: find the latest scene automatically]")
     parser.add_option('--quality', '-q', type="int", default="80", help="set the image output quality in percent [default: use 80% quality]")

@@ -20,60 +20,97 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import feedparser
+import urllib
 import httplib
-import re
 import os
+import gzip
 import shutil
+import random
 import subprocess
 import json
+import time
 from landsat.downloader import Downloader
 from landsat.image import Simple
 from colorama import init, Fore
 init(autoreset=True)
 
-aws_domain = "landsat-pds.s3.amazonaws.com"
 work_folder = "temp"
 
-def construct_scene_url_path(scene_id):
-    return "/L8/" + scene_id[3:6] + "/" + scene_id[6:9] + "/" + scene_id
+def download_scene_list():
+    gzip_path = work_folder + "/scene_list.gz"
+    unpack_path = work_folder + "/scene_list.csv"
+    if os.path.isfile(unpack_path):
+        now = time.time()
+        last_modified = os.path.getmtime(unpack_path)
+        interval_in_seconds = now - last_modified
+        if interval_in_seconds < (3 * 60 * 60):
+            print "Already downloaded list is recent enough (<3h) ..."
+            return unpack_path
 
-def is_scene_available(scene_id):
-    connection = httplib.HTTPConnection(aws_domain)
-    connection.request("GET", construct_scene_url_path(scene_id) + "/index.html")
-    response = connection.getresponse()
-    return response.status == 200
+    print "Downloading ..."
+    urllib.urlretrieve ("http://landsat-pds.s3.amazonaws.com/scene_list.gz", gzip_path)
+    gzip_handle = gzip.open(gzip_path)
+    with open(unpack_path, "w") as out:
+        for line in gzip_handle:
+            out.write(line)
+    return unpack_path
 
-def extract_scene_id_from_description(description):
-    match_obj = re.search(r'^Scene ID: (.*)$', description, re.M|re.I)
-    if match_obj:
-        return match_obj.group(1)
-    else:
-        return ""
+def tail_from_scene_list(file_path, num_scenes):
+    stdin, stdout = os.popen2("tail -n " + str(num_scenes) + " " + file_path)
+    stdin.close()
+    lines = stdout.readlines(); stdout.close()
+    scenes = list()
+    for line in lines:
+        tokens = line.split(',')
+        scene = (tokens[0], tokens[10][:-11]) # Remove /index.hmtl\n
+        scenes.append(scene)
+    return scenes
 
-def bisect_scenes(scenes):
-    lo = 0
-    hi = len(scenes)
-    while lo < hi:
-        mid = (lo+hi)//2
-        scene_id = extract_scene_id_from_description(scenes[mid].description)
-        print "Trying " + scene_id + " - Entry " + str(mid)
-        if is_scene_available(scene_id): hi = mid
-        else: lo = mid + 1
-    if lo < len(scenes):
-        result_scene_id = extract_scene_id_from_description(scenes[lo].description)
-        if is_scene_available(result_scene_id): return result_scene_id
-    return ""
+def parse_mtl(mtl_path):
+    mtl = dict()
+    groupStack = [mtl];
+    for line in open(mtl_path, "r"):
+        if line.strip() == "END":
+            break
+        parts = line.split("=", 1)
+        key   = parts[0].strip()
+        value = parts[1].strip()
+        if key == "GROUP":
+            group = dict()
+            groupStack[-1][value] = group
+            groupStack.append(group)
+        elif key == "END_GROUP":
+            groupStack.pop()
+        else:
+            groupStack[-1][key] = value
+    return mtl
 
-def find_latest_scene_id():
-    print Fore.GREEN + "# Finding the latest scene ..."
-    feed_url = "https://landsat.usgs.gov/landsat/rss/Landsat8_C1.rss"
-    print "Reading from " + feed_url
-    feed = feedparser.parse(feed_url)
-    scene_id = bisect_scenes(feed.entries)
-    print scene_id
+def download_mtl(scene):
+    mtl_path = work_folder + "/" + scene[0] + "_scene.mtl"
+    urllib.urlretrieve (scene[1] + scene[0] + "_MTL.txt", mtl_path)
+    return parse_mtl(mtl_path)
+
+def is_scene_suitable(scene):
+    mtl = download_mtl(scene)
+    projection = mtl["L1_METADATA_FILE"]["PROJECTION_PARAMETERS"]["MAP_PROJECTION"]
+    return projection == '"UTM"'
+
+def find_scene():
+    print Fore.GREEN + "# Downloading scene list ..."
+    if not os.path.exists(work_folder):
+        os.makedirs(work_folder)
+    num_scenes = 500
+    file_path = download_scene_list()
     print ""
-    return scene_id
+    print Fore.GREEN + "# Finding recent and suitable scene ..."
+    scenes = tail_from_scene_list(file_path, num_scenes)
+    for count in range(0, num_scenes):
+        random_index = random.randint(0, num_scenes - 1)
+        scene = scenes[random_index]
+        if is_scene_suitable(scene):
+            print scene[0]
+            print ""
+            return scene[0]
 
 def download_scene(scene_id):
     print Fore.GREEN + "# Downloading scene ..."
@@ -90,29 +127,6 @@ def convert_scene(scene_id, quality_in_percent, resize_in_percent):
     command = "convert -quality {} -resize {}% {} {}".format(str(quality_in_percent), str(resize_in_percent), processedTIF, convertedJPG)
     subprocess.call(command, shell=True)
     print ""
-
-def parse_mtl(mtl_path):
-    mtl = dict()
-    groupStack = [mtl];
-
-    for line in open(mtl_path, "r"):
-        if line.strip() == "END":
-            break
-
-        parts = line.split("=", 1)
-        key   = parts[0].strip()
-        value = parts[1].strip()
-
-        if key == "GROUP":
-            group = dict()
-            groupStack[-1][value] = group
-            groupStack.append(group)
-        elif key == "END_GROUP":
-            groupStack.pop()
-        else:
-            groupStack[-1][key] = value
-
-    return mtl
 
 def determine_country(lat, lon):
     connection = httplib.HTTPConnection("maps.googleapis.com")

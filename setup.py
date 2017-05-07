@@ -27,15 +27,15 @@ except ImportError:
 
 config = {
     'name': 'landsat8',
-    'description': 'Command line tool for downloading the latest available Landsat8 scene and converting it to a natural color JPG image using the landsat-util library.',
+    'description': 'Command line tool for downloading Landsat8 scenes to convert them to natural color JPG images using the landsat-util library.',
     'author': 'Patrick Eschenbach',
     'author_email': 'paddyesch@gmx.de',
-    'version': '0.1',
+    'version': '0.2',
     'license': 'MIT License',
-    'keywords': "landsat satellite scene",
+    'keywords': "landsat satellite recent scene image",
     'url': 'https://github.com/paddyesch/landsat8',
     'download_url': 'https://github.com/paddyesch/landsat8/archive/master.zip',
-    'install_requires': ['feedparser', 'colorama', 'landsat-util'],
+    'install_requires': ['colorama', 'landsat-util'],
     'packages': ['landsat8'],
     'scripts': ['bin/landsat8'],
     'classifiers': [
