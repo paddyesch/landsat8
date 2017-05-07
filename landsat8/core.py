@@ -67,7 +67,7 @@ def bisect_scenes(scenes):
 
 def find_latest_scene_id():
     print Fore.GREEN + "# Finding the latest scene ..."
-    feed_url = "https://landsat.usgs.gov/landsat/rss/Landsat8.rss"
+    feed_url = "https://landsat.usgs.gov/landsat/rss/Landsat8_C1.rss"
     print "Reading from " + feed_url
     feed = feedparser.parse(feed_url)
     scene_id = bisect_scenes(feed.entries)
