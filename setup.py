@@ -27,7 +27,7 @@ except ImportError:
 
 config = {
     'name': 'landsat8',
-    'description': 'Command line tool for downloading Landsat8 scenes to convert them to natural color JPG images using the landsat-util library.',
+    'description': 'Command line tool for downloading Landsat8 scenes and converting them to natural color JPG images using the landsat-util library.',
     'author': 'Patrick Eschenbach',
     'author_email': 'paddyesch@gmx.de',
     'version': '0.2',

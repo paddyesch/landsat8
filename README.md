@@ -1,6 +1,6 @@
 # Landsat8
 
-Command line tool for downloading Landsat8 scenes to convert them to natural color JPG images using the landsat-util library.
+Command line tool for downloading Landsat8 scenes and converting them to natural color JPG images using the landsat-util library.
 Downloading and processing of the image bands is done by the [landsat-util](https://github.com/developmentseed/landsat-util).
 
 ## Usage
