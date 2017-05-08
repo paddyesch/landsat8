@@ -123,7 +123,7 @@ def convert_scene(scene_id, quality_in_percent, resize_in_percent):
     print Fore.GREEN + "# Processing scene ..."
     processor = Simple(work_folder + "/" + scene_id, [4, 3, 2], work_folder)
     processedTIF = processor.run()
-    convertedJPG = scene_id + ".JPG"
+    convertedJPG = scene_id + ".jpg"
     command = "convert -quality {} -resize {}% {} {}".format(str(quality_in_percent), str(resize_in_percent), processedTIF, convertedJPG)
     subprocess.call(command, shell=True)
     print ""
@@ -177,6 +177,26 @@ def collect_metadata(scene_id):
     metadataPath = scene_id + "_metadata.json"
     with open(metadataPath, "w") as outfile:
         json.dump(metadata, outfile)
+    print ""
+
+def create_soft_links(scene_id):
+    print Fore.GREEN + "# Creating soft links ..."
+    lns_source_path = scene_id + ".jpg"
+    lns_target_path = "LATEST.jpg"
+    lns_meta_source_path = scene_id + "_metadata.json"
+    lns_meta_target_path = "LATEST_metadata.json"
+    try:
+        os.remove(lns_target_path)
+    except:
+        pass
+    try:
+        os.remove(lns_meta_target_path)
+    except:
+        pass
+    os.symlink(lns_source_path, lns_target_path)
+    os.symlink(lns_meta_source_path, lns_meta_target_path)
+    print lns_target_path
+    print lns_meta_target_path
     print ""
 
 def clean_up_scene(scene_id):
