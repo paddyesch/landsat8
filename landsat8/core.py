@@ -29,6 +29,7 @@ import random
 import subprocess
 import json
 import time
+import math
 from landsat.downloader import Downloader
 from landsat.image import Simple
 from colorama import init, Fore
@@ -155,6 +156,29 @@ def determine_countries(mtl):
     if "" in countries: countries.remove("")
     return countries
 
+def calculate_latlon_midpoint(lat1, lon1, lat2, lon2):
+    "Calculation of geographic midpoint with method A: http://www.geomidpoint.com/calculation.html"
+    lat1 = math.radians(lat1)
+    lon1 = math.radians(lon1)
+    lat2 = math.radians(lat2)
+    lon2 = math.radians(lon2)
+    w1 = 1
+    w2 = 2
+    w_total = w1 + w2
+    x1 = math.cos(lat1) * math.cos(lon1)
+    y1 = math.cos(lat1) * math.sin(lon1)
+    z1 = math.sin(lat1)
+    x2 = math.cos(lat2) * math.cos(lon2)
+    y2 = math.cos(lat2) * math.sin(lon2)
+    z2 = math.sin(lat2)
+    x = ((x1 * w1) + (x2 * w2)) / w_total
+    y = ((y1 * w1) + (y2 * w2)) / w_total
+    z = ((z1 * w1) + (z2 * w2)) / w_total
+    hyp = math.sqrt(x * x + y * y)
+    mid_lat = math.atan2(z, hyp)
+    mid_lon = math.atan2(y, x)
+    return (math.degrees(mid_lat), math.degrees(mid_lon))
+
 def collect_metadata(scene_id):
     print Fore.GREEN + "# Collecting metadata ..."
     mtl_path = work_folder + "/" + scene_id + "/" + scene_id + "_MTL.txt"
@@ -162,16 +186,27 @@ def collect_metadata(scene_id):
     date = mtl["L1_METADATA_FILE"]["PRODUCT_METADATA"]["DATE_ACQUIRED"]
     ll_lat = mtl["L1_METADATA_FILE"]["PRODUCT_METADATA"]["CORNER_LL_LAT_PRODUCT"]
     ll_lon = mtl["L1_METADATA_FILE"]["PRODUCT_METADATA"]["CORNER_LL_LON_PRODUCT"]
+    ur_lat = mtl["L1_METADATA_FILE"]["PRODUCT_METADATA"]["CORNER_UR_LAT_PRODUCT"]
+    ur_lon = mtl["L1_METADATA_FILE"]["PRODUCT_METADATA"]["CORNER_UR_LON_PRODUCT"]
+    center_latlon = calculate_latlon_midpoint(float(ll_lat), float(ll_lon), float(ur_lat), float(ur_lon))
     countries = list(determine_countries(mtl))
     print "Date acquired: " + date
     print "Lower left latitude: " + ll_lat
     print "Lower left longitude: " + ll_lon
+    print "Upper right latitude: " + ur_lat
+    print "Upper right longitude: " + ur_lon
+    print "Center latitude: " + str(center_latlon[0])
+    print "Center longitude: " + str(center_latlon[1])
     print "Countries: " + str(countries)
 
     metadata = {}
     metadata["date_acquired"] = date
-    metadata["lower_left_lat"] = ll_lat
-    metadata["lower_left_lon"] = ll_lon
+    metadata["lower_left_lat"] = float(ll_lat)
+    metadata["lower_left_lon"] = float(ll_lon)
+    metadata["upper_right_lat"] = float(ur_lat)
+    metadata["upper_right_lon"] = float(ur_lon)
+    metadata["center_lat"] = center_latlon[0]
+    metadata["center_lon"] = center_latlon[1]
     metadata["countries"] = countries
 
     metadataPath = scene_id + "_metadata.json"
@@ -204,6 +239,14 @@ def clean_up_scene(scene_id):
     clean_path = work_folder + "/" + scene_id
     shutil.rmtree(clean_path)
     print clean_path
+
+    clean_mtl = work_folder + "/" + scene_id + "_scene.mtl"
+    try:
+        os.remove(clean_mtl)
+        print clean_mtl
+    except:
+        pass
+        
     try:
         os.rmdir(work_folder)
         print work_folder + "/"
