@@ -91,12 +91,14 @@ def download_mtl(scene):
     urllib.urlretrieve (scene[1] + scene[0] + "_MTL.txt", mtl_path)
     return parse_mtl(mtl_path)
 
-def is_scene_suitable(scene):
+def is_scene_suitable(scene, max_cloud_cover):
     mtl = download_mtl(scene)
     projection = mtl["L1_METADATA_FILE"]["PROJECTION_PARAMETERS"]["MAP_PROJECTION"]
-    return projection == '"UTM"'
+    cloud_cover = mtl["L1_METADATA_FILE"]["IMAGE_ATTRIBUTES"]["CLOUD_COVER"]
+    cloud_cover = float(cloud_cover)
+    return projection == '"UTM"' and cloud_cover < max_cloud_cover
 
-def find_scene():
+def find_scene(max_cloud_cover):
     print Fore.GREEN + "# Downloading scene list ..."
     if not os.path.exists(work_folder):
         os.makedirs(work_folder)
@@ -108,10 +110,12 @@ def find_scene():
     for count in range(0, num_scenes):
         random_index = random.randint(0, num_scenes - 1)
         scene = scenes[random_index]
-        if is_scene_suitable(scene):
+        if is_scene_suitable(scene, max_cloud_cover):
             print scene[0]
             print ""
             return scene[0]
+    print "No suitable scene found ..."
+    return ""
 
 def download_scene(scene_id):
     print Fore.GREEN + "# Downloading scene ..."
@@ -184,6 +188,7 @@ def collect_metadata(scene_id):
     mtl_path = work_folder + "/" + scene_id + "/" + scene_id + "_MTL.txt"
     mtl = parse_mtl(mtl_path)
     date = mtl["L1_METADATA_FILE"]["PRODUCT_METADATA"]["DATE_ACQUIRED"]
+    cloud_cover = mtl["L1_METADATA_FILE"]["IMAGE_ATTRIBUTES"]["CLOUD_COVER"]
     ll_lat = mtl["L1_METADATA_FILE"]["PRODUCT_METADATA"]["CORNER_LL_LAT_PRODUCT"]
     ll_lon = mtl["L1_METADATA_FILE"]["PRODUCT_METADATA"]["CORNER_LL_LON_PRODUCT"]
     ur_lat = mtl["L1_METADATA_FILE"]["PRODUCT_METADATA"]["CORNER_UR_LAT_PRODUCT"]
@@ -191,6 +196,7 @@ def collect_metadata(scene_id):
     center_latlon = calculate_latlon_midpoint(float(ll_lat), float(ll_lon), float(ur_lat), float(ur_lon))
     countries = list(determine_countries(mtl))
     print "Date acquired: " + date
+    print "Cloud cover: " + cloud_cover
     print "Lower left latitude: " + ll_lat
     print "Lower left longitude: " + ll_lon
     print "Upper right latitude: " + ur_lat
@@ -201,6 +207,7 @@ def collect_metadata(scene_id):
 
     metadata = {}
     metadata["date_acquired"] = date
+    metadata["cloud_cover"] = float(cloud_cover)
     metadata["lower_left_lat"] = float(ll_lat)
     metadata["lower_left_lon"] = float(ll_lon)
     metadata["upper_right_lat"] = float(ur_lat)
