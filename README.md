@@ -2,6 +2,7 @@
 
 Command line tool for downloading Landsat8 scenes and converting them to natural color JPG images using the landsat-util library.
 Downloading and processing of the image bands is done by the [landsat-util](https://github.com/developmentseed/landsat-util).
+I use this tool for creating daily satellite images for my [website](http://patrickeschenbach.de).
 
 ## Examples
 
@@ -37,8 +38,8 @@ The following metadata is collected for a scene and provided as JSON file:
 
 ```json
 {
-    "center_lon": 23.613973112665594,
-    "center_lat": 50.62015328894009,
+    "center_lat": 50.62015,
+    "center_lon": 23.61397,
     "cloud_cover": 67.34,
     "countries": [
         "Ukraine",
