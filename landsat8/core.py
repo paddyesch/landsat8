@@ -195,6 +195,7 @@ def collect_metadata(scene_id):
     ur_lon = mtl["L1_METADATA_FILE"]["PRODUCT_METADATA"]["CORNER_UR_LON_PRODUCT"]
     center_latlon = calculate_latlon_midpoint(float(ll_lat), float(ll_lon), float(ur_lat), float(ur_lon))
     countries = list(determine_countries(mtl))
+    print "Scene ID: " + scene_id
     print "Date acquired: " + date
     print "Cloud cover: " + cloud_cover
     print "Lower left latitude: " + ll_lat
@@ -206,6 +207,7 @@ def collect_metadata(scene_id):
     print "Countries: " + str(countries)
 
     metadata = {}
+    metadata["scene_id"] = scene_id
     metadata["date_acquired"] = date
     metadata["cloud_cover"] = float(cloud_cover)
     metadata["lower_left_lat"] = float(ll_lat)
