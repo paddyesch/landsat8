@@ -2,7 +2,7 @@
 
 Command line tool for downloading Landsat8 scenes and converting them to natural color JPG images.
 The downloading and image band processing for natural colors is done by the [landsat-util](https://github.com/developmentseed/landsat-util) library.
-I use this tool for creating daily satellite images for my [website](http://patrickeschenbach.de).
+**This tool ceased to work since the Landsat8 scene identifier schema was changed.**
 
 ## Examples
 
@@ -86,3 +86,4 @@ Options:
 MIT License
 
 Copyright (c) 2016 Patrick Eschenbach
+
